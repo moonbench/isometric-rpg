@@ -1,0 +1,11 @@
+- Set any angle for entity, determine rotation file to use from this (for any number of files)
+- Animations for states
+- Collision against other blocks
+- Collision against other entities
+- Onscreen controls/UI
+- Background music
+	- Volume/mute control
+- Optional scenes for
+	- Testing things
+	- Making templates for entities
+	- Testing animations/images live

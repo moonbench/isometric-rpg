@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Untitled project</title>
+
+  <style type="text/css">
+    body{
+      background-color: #050505;
+      color: #BEBEBE;
+      font-family: arial, sans-serif;
+    }
+    #fps_meter{
+      position: absolute;
+      bottom: 1.2em;
+      left: 1.1em;
+      width: 200px;
+      margin: 0px auto;
+      min-height: 3em;
+    }
+    #game_canvas{
+      border: 1px solid #333;
+      background-color: #000;
+      cursor: default;
+      display: block;
+      margin: 0px auto;
+    }
+    #container{
+      width: 1280px;
+      margin: 0px auto;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- A canvas to draw the game into -->
+  <div id="container">
+    <div id="fps_meter"></div>
+    <div id="game">
+      <canvas id="game_canvas" width="1280" height="720"></canvas>
+    </div>
+  </div>
+  <p>
+    <ul>
+      <li>Move the mouse to look around</li>
+      <li>Click to walk</li>
+      <li>Scroll-wheel changes the zoom level</li>
+    </ul>
+  </p>
+
+
+  <script type="text/javascript" src="js/util/asset_depot.js"></script>
+  <script type="text/javascript" src="js/util/audio_emitter.js"></script>
+  <script type="text/javascript">
+    const asset_depot = AssetDepot.create();
+  </script>
+
+  <script type="text/javascript" src="js/tile/tile.js"></script>
+  <script type="text/javascript" src="js/tiles/dirt.js"></script>
+  <script type="text/javascript" src="js/tiles/grass.js"></script>
+  <script type="text/javascript" src="js/tiles/water.js"></script>
+  <script type="text/javascript" src="js/tiles/sand.js"></script>
+  <script type="text/javascript" src="js/tiles/stone.js"></script>
+  <script type="text/javascript" src="js/tiles/wood.js"></script>
+
+  <script type="text/javascript" src="js/entities/tree.js"></script>
+  <script type="text/javascript" src="js/entities/wall.js"></script>
+  <script type="text/javascript" src="js/entities/fence.js"></script>
+  <script type="text/javascript" src="js/entities/table_girl.js"></script>
+  <script type="text/javascript" src="js/entities/widget.js"></script>
+
+  <script type="text/javascript" src="js/util/util.js"></script>
+  <script type="text/javascript" src="js/util/vector.js"></script>
+  <script type="text/javascript" src="js/util/meter.js"></script>
+  <script type="text/javascript" src="js/entity/entity.js"></script>
+  <script type="text/javascript" src="js/entity/sprite.js"></script>
+  <script type="text/javascript" src="js/entity/player.js"></script>
+  <script type="text/javascript" src="js/universe/ground.js"></script>
+  <script type="text/javascript" src="js/universe/world.js"></script>
+  <script type="text/javascript" src="js/universe/viewport.js"></script>  
+  <script type="text/javascript" src="js/core/cursor.js"></script>
+  <script type="text/javascript" src="js/core/engine.js"></script>
+  <script type="text/javascript" src="js/game.js"></script>
+
+  <script type="text/javascript">
+    const game = Game.create("game_canvas", "fps_meter");
+
+    const scene = (function(){
+      const table_s_sprite = asset_depot.add_image("table", "assets/table_s.png");
+
+      const world = World.create();
+      const ground = Ground.create();
+      world.set_ground(ground);
+      world.audio.add_to_group("bg", asset_depot.add_audio("bg", "assets/bg.mp3"));
+      world.audio.loop("bg", function(){ return true; });
+
+      ground.set_tile_types({
+        0: DirtTile,
+        1: GrassTile,
+        2: WaterTile,
+        3: SandTile,
+        4: StoneTile,
+        5: WoodTile,
+      });
+      ground.set_tiles([
+        [[1, 00], [1, 10], [1, 20], [1, 30], [1, 30], [1, 20], [1, 10], [1, 10], [1, 10], [1, 05], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[1, 10], [1, 10], [1, 20], [1, 30], [1, 20], [1, 10], [1, 00], [1, 10], [1, 20], [1, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[4, 20], [4, 20], [0, 30], [0, 20], [0, 15], [0, 10], [5, 00], [0, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[4, 20], [4, 10], [0, 20], [5, 00], [5, 00], [5, 00], [5, 00], [0, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[4, 30], [4, 20], [0, 10], [5, 00], [5, 00], [5, 00], [5, 00], [0, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[4, 30], [4, 30], [0, 15], [5, 00], [5, 00], [5, 00], [5, 00], [5, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[4, 20], [4, 20], [0, 10], [5, 00], [5, 00], [5, 00], [5, 00], [0, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[4, 20], [4, 20], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10], [0, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[4, 10], [4, 10], [3, 10], [3, 10], [3, 10], [3, 10], [3, 10], [3, 10], [3, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 20], [3, 20], [3, 10], [3, 10], [3, 05], [3, 10], [3, 20], [3, 20], [3, 10], [3, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 10], [3, 20], [3, 10], [3, 00], [3, 00], [3, 05], [3, 10], [3, 10], [3, 05], [3, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 10], [3, 10], [3, 05], [3, 10], [3, 10], [3, 05], [3, 05], [3, 00], [3, 00], [3, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 10], [3, 05], [3, 00], [3, 10], [3, 05], [3, 00], [3, 00], [3, 10], [3, 05], [3, 05], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [3, 05], [3, 00], [3, 05], [3, 00], [3, 05], [3, 00], [3, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [3, 05], [3, 00], [3, 05], [3, 05], [3, 15], [3, 20], [3, 30], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [3, 00], [3, 00], [3, 05], [3, 10], [3, 25], [3, 50], [3, 60], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [3, 00], [3, 00], [3, 05], [3, 05], [3, 15], [3, 20], [3, 40], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [2, 00], [2, 00], [3, 05], [3, 00], [3, 05], [3, 10], [3, 50], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [0, 00], [2, 00], [2, 00], [3, 00], [3, 05], [3, 00], [3, 30], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [0, 00], [0, 00], [2, 00], [3, 00], [3, 05], [3, 00], [3, 20], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [3, 00], [0, 00], [2, 00], [3, 00], [3, 05], [3, 00], [3, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [3, 00], [0, 00], [2, 00], [3, 00], [3, 05], [3, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 00], [3, 00], [3, 00], [2, 00], [2, 00], [3, 05], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [3, 05], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 64], [3, 05], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [3, 05], [2, 00], [2, 00], [2, 00], [3, 05], [3, 00], [3, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [3, 05], [2, 00], [2, 05], [3, 00], [3, 05], [3, 00], [3, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [3, 05], [2, 00], [3, 05], [3, 00], [3, 05], [3, 10], [3, 30], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [3, 05], [2, 00], [2, 00], [3, 00], [3, 15], [3, 30], [3, 50], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [2, 00], [2, 00], [3, 05], [3, 00], [3, 05], [3, 10], [3, 30], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [2, 00], [3, 00], [3, 05], [3, 00], [3, 05], [3, 00], [3, 10], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [3, 05], [3, 00], [3, 05], [3, 00], [3, 05], [3, 00], [3, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [3, 05], [3, 00], [3, 05], [3, 00], [3, 05], [3, 00], [3, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+        [[3, 05], [3, 00], [3, 05], [3, 05], [3, 00], [3, 05], [3, 00], [3, 05], [3, 00], [3, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00], [2, 00]],
+      ]);
+
+      const player = PlayerEntity.create("Player", 5*128, 5*128, 0, 0, 64, 128);
+
+      const entities = [
+        Entity.create("A", 1*128, 1*128, 0, 0, 64, 32),
+        Entity.create("B", 0*128, 7*128, 0, 0, 128, 128),
+        Entity.create("Test", 2*128, 20*128, 0, 0, 128, 128),
+        SpriteEntity.create("C", 3*128, 8*128, 0, 0, 64, 64, table_s_sprite),
+        Entity.create("D", 8*128, 3*128, 16, 0, 32, 16),
+        Widget.create("Da", 3*128, 3*128, 16, 0, 32, 64),
+        Entity.create("Db", 3*128, 5*128, 0, 0, 32, 64),        
+        TreeEntity.create("Some tree", 6*128, 9*128, 0, 0, 128, 128),
+        TreeEntity.create("Some tree", 9*128, 0*128, 0, 0, 128, 128),
+        TreeEntity.create("Tree", 7*128, 0*128, 0, 0, 128, 128),
+        TreeEntity.create("Tree", 8*128, 1*128, 0, 0, 128, 128),
+        TreeEntity.create("Foo", 6*128, 13*128, 1, 0, 256, 256),
+        TreeEntity.create("Bar", 6*128, 20*128, 0, 0, 256, 256),
+        TreeEntity.create("Bar", 2*128, 26*128, 0, 0, 128, 128),
+        TreeEntity.create("Bar", 2*128, 27*128, 0, 0, 128, 128),
+        TreeEntity.create("Bar", 4*128, 31*128, 0, 0, 128, 128),
+
+        WallEntity.create("Wall", 2*128, 7*128, 0, 0, 128, 128),
+        WallEntity.create("Wall", 3*128, 7*128, 0, 0, 128, 128),
+        WallEntity.create("Wall", 4*128, 7*128, 0, 0, 128, 128),
+        WallEntity.create("Wall", 5*128, 7*128, 0, 0, 128, 128),
+        WallEntity.create("Wall", 6*128, 7*128, 0, 0, 128, 128),
+        WallEntity.create("Wall", 7*128, 7*128, 0, 0, 128, 128),
+
+        FenceEntity.create("Fence", 7*128, 6*128, 0, 0, 128, 128),
+        FenceEntity.create("Fence", 7*128, 4*128, 0, 0, 128, 128),
+        FenceEntity.create("Fence", 7*128, 3*128, 0, 0, 128, 128),
+
+        WallEntity.create("Wall", 7*128, 2*128, 0, 0, 128, 128), 
+        WallEntity.create("Wall", 5*128, 2*128, 0, 0, 128, 128),
+        WallEntity.create("Wall", 4*128, 2*128, 0, 0, 128, 128),
+        WallEntity.create("Wall", 3*128, 2*128, 0, 0, 128, 128),
+        WallEntity.create("Wall", 2*128, 2*128, 0, 0, 128, 128),
+
+        FenceEntity.create("Fence", 2*128, 3*128, 0, 0, 128, 128),
+        FenceEntity.create("Fence", 2*128, 4*128, 0, 0, 128, 128),
+        FenceEntity.create("Fence", 2*128, 5*128, 0, 0, 128, 128),
+        FenceEntity.create("Fence", 2*128, 6*128, 0, 0, 128, 128),
+
+        TableGirl.create("Casper", 4*128, 3*128, 0, 0, 128, 128),
+        player,
+
+        Entity.create("Hi", 13*128, 24*128, 32, 0, 128, 128),
+      ];
+
+      entities.forEach(function(entity){
+        ground.add_entity(entity);
+      });
+      
+      game.engine.set_world(world);
+      game.engine.set_scale(2);
+
+      game.engine.handle_mouse_button = player.handle_mouse_button;
+
+      game.engine.update_function = function(dt){game.engine.viewport.center_on(player.x, player.y, player.z); }
+
+      game.engine.handle_mouse_wheel = function(event){
+        event.preventDefault();
+        game.engine.set_scale(Math.max(1, Math.min(3, game.engine.scale - event.detail/25)));
+      }
+    })();
+
+    game.run();
+  </script>
+
+</body>
+</html>
